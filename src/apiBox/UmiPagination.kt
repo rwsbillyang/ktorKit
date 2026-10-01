@@ -1,13 +1,9 @@
 package com.github.rwsbillyang.ktorKit.apiBox
 
 import com.github.rwsbillyang.ktorKit.db.SqlPagination
-import com.github.rwsbillyang.ktorKit.toObjectId
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import org.bson.conversions.Bson
-import org.komapper.core.dsl.expression.WhereDeclaration
-import org.litote.kmongo.bson
 import java.net.URLDecoder
 
 
@@ -43,9 +39,9 @@ interface IUmiPaginationParams{
     /**
      * convert search params to Bson(not include UmiPagination.lastIdFilter) for mongodb/Kmongo
      * */
-    fun toFilter(): Bson{
-        TODO("Not Implement")
-    }
+//    fun toFilter(): Bson {
+//        TODO("Not Implement")
+//    }
 
     /**
      * convert search params to SqlPagination for mysql/komapper
@@ -90,15 +86,15 @@ class UmiPagination(
      * new version, lastId is in UmiPagination, legacy version it's in listSearchParams
      * @return mongodb bson
      * */
-    fun lastIdFilter(): Bson? {
-        if(lastId == null) return null
-        val s = if(sort == Sort.DESC) "\$lt" else "\$gt"
-        return when(sKeyType){
-            SortKeyType.TypeNumber -> "{ '${sKey}': { $s: $lastId } }"
-            SortKeyType.TypeString -> "{ '${sKey}': { $s: `$lastId` } }"
-            SortKeyType.TypeObjectId -> "{ '${sKey}': { $s: ObjectId(\"${lastId.toObjectId().toHexString()}\") } }"
-        }.bson
-    }
+//    fun lastIdFilter(): Bson? {
+//        if(lastId == null) return null
+//        val s = if(sort == Sort.DESC) "\$lt" else "\$gt"
+//        return when(sKeyType){
+//            SortKeyType.TypeNumber -> "{ '${sKey}': { $s: $lastId } }"
+//            SortKeyType.TypeString -> "{ '${sKey}': { $s: `$lastId` } }"
+//            SortKeyType.TypeObjectId -> "{ '${sKey}': { $s: ObjectId(\"${lastId.toObjectId().toHexString()}\") } }"
+//        }.bson
+//    }
 }
 
 

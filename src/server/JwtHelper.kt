@@ -168,7 +168,7 @@ abstract class AbstractJwtHelper(
      * */
     abstract fun isAuthorized(call: ApplicationCall, needAnyRole: List<String>? = null, needLevel: Int? = null): Boolean
 
-    open fun validate(credential: JWTCredential): Principal? {
+    open fun validate(credential: JWTCredential): JWTPrincipal? {
         return if(validate(credential.payload)) {
             //log.info("validate jwt done!")
             JWTPrincipal(credential.payload)

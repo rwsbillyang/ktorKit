@@ -18,16 +18,20 @@
 
 package com.github.rwsbillyang.ktorKit.db
 
-enum class DbType{NOSQL, SQL}
+/**
+ * KINGBASE = POSTGRE
+ * DAMENG = ORACLE
+ * */
+enum class DatabaseType {
+    NOSQL,
+    SQL_MYSQL, SQL_POSTGRL, SQL_KINGBASE, SQL_ORACLE, SQL_DAMENG, SQL_SQLITE
+}
 
 class DbConfig(
     val dbName: String,
-    val dbType: DbType = DbType.NOSQL,
+    val dbType: DatabaseType = DatabaseType.SQL_MYSQL,
     val host: String = "127.0.0.1",
-    val port: Int = when(dbType){
-        DbType.NOSQL -> 27017
-        DbType.SQL -> 3306
-    },
+    val port: Int = 0,
     val userName: String? = null,
     val pwd: String? = null
 ) {

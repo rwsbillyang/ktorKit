@@ -3,6 +3,7 @@ package com.github.rwsbillyang.ktorKit.util
 
 
 import io.ktor.http.content.*
+import io.ktor.utils.io.jvm.javaio.copyTo
 
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -95,15 +96,19 @@ object UploadUtil {
                 is PartData.FileItem -> {
                     val ext = part.originalFileName?.let { File(it).extension } ?: "jpg" // or webp?
                     fileName = "$path/$filename.$ext"
-                    part.streamProvider().use { input ->
-                        writeToFile(input, fileName!!)
+//                    part.streamProvider().use { input ->
+//                        writeToFile(input, fileName)
+//                    }
+                    val channel = part.provider() // 返回 ByteReadChannel
+                    File(fileName).outputStream().buffered().use { output ->
+                        channel.copyTo(output)
                     }
                 }
                 else -> {
                     println("not support part type")
                 }
             }
-            part.dispose()
+            part.release()
         }
 
         return fileName

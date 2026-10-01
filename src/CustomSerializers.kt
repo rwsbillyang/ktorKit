@@ -21,7 +21,6 @@ package com.github.rwsbillyang.ktorKit
 import com.github.rwsbillyang.ktorKit.util.toUtc
 import com.github.rwsbillyang.ktorKit.util.utcToLocalDateTime
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializer
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -34,7 +33,6 @@ import java.util.*
 
 
 @Deprecated("use ObjectIdBase64Serializer instead")
-@Serializer(forClass = ObjectId::class)
 object ObjectIdHexStringSerializer : KSerializer<ObjectId> {
     override val descriptor: SerialDescriptor =
         PrimitiveSerialDescriptor("ObjectIdHexStringSerializer", PrimitiveKind.STRING)
@@ -51,7 +49,6 @@ object ObjectIdHexStringSerializer : KSerializer<ObjectId> {
 /**
  * based on Base64 URL Encoder and Decoder
  * */
-@Serializer(forClass = ObjectId::class)
 object ObjectIdBase64Serializer : KSerializer<ObjectId> {
     private val base64Decoder = Base64.getUrlDecoder()
     private val base64Encoder = Base64.getUrlEncoder()
@@ -71,7 +68,7 @@ fun ObjectId.to64String() = Base64.getUrlEncoder().encodeToString(toByteArray())
 fun String.toObjectId() = ObjectId(Base64.getUrlDecoder().decode(this))
 
 
-@Serializer(forClass = LocalDateTime::class)
+
 object LocalDateTimeAsStringSerializer : KSerializer<LocalDateTime> {
     private val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
@@ -90,7 +87,7 @@ object LocalDateTimeAsStringSerializer : KSerializer<LocalDateTime> {
     }
 }
 
-@Serializer(forClass = LocalDateTime::class)
+
 object LocalDateTimeAsLongSerializer : KSerializer<LocalDateTime> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("LocalDateTimeAsLongSerializer", PrimitiveKind.LONG)
     override fun serialize(encoder: Encoder, value: LocalDateTime) = encoder.encodeLong(value.toUtc())

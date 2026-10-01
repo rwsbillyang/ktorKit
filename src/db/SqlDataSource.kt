@@ -18,17 +18,13 @@
 
 package com.github.rwsbillyang.ktorKit.db
 
-import com.zaxxer.hikari.HikariDataSource
 import org.koin.core.component.KoinComponent
-import org.komapper.dialect.mysql.jdbc.MySqlJdbcDialect
 import org.komapper.jdbc.JdbcDatabase
-import org.komapper.jdbc.JdbcDialect
 
-class SqlDataSource(dbName: String, host: String ="localhost", port: Int = 3306,
-                    userName: String? = null, pwd: String? = null,
-                    jdbcDialect: JdbcDialect? = null): KoinComponent {
-    val db: JdbcDatabase = JdbcDatabase(
-        dataSource = HikariDataSource(optimizedHikariConfig(dbName,userName?:"root",pwd,host,port)),
-        dialect = jdbcDialect?:MySqlJdbcDialect()
-    )
+
+class SqlDataSource(dbType: DatabaseType, dbName: String, userName: String? = null, pwd: String? = null, host: String ="localhost", port: Int = 0): KoinComponent {
+    init {
+        SqlDatabaseFactory.init(dbType, dbName, userName, pwd, host, port)
+    }
+    val db: JdbcDatabase = SqlDatabaseFactory.db
 }

@@ -21,17 +21,17 @@ package com.github.rwsbillyang.ktorKit.db
 import com.zaxxer.hikari.HikariConfig
 
 
-//
+
 /**
  * 官方推荐的优化配置
  * 参见：https://github.com/brettwooldridge/HikariCP/wiki/MySQL-Configuration
  * */
-fun optimizedHikariConfig(dbName: String, userName: String = "root", pwd: String? = null, host: String ="localhost", port: Int = 3306)
+fun optimizedHikariConfig()
 = HikariConfig().apply {
-    driverClassName = "com.mysql.cj.jdbc.Driver"
-    jdbcUrl = "jdbc:mysql://$host:$port/$dbName?useSSL=false&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai"
-    username = userName
-    if(pwd != null) password = pwd
+    //driverClassName = "com.mysql.cj.jdbc.Driver"
+    //jdbcUrl = "jdbc:mysql://$host:$port/$dbName?useSSL=false&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai"
+    //username = userName
+    //if(pwd != null) password = pwd
 
     addDataSourceProperty("cachePrepStmts", "true")
     addDataSourceProperty("prepStmtCacheSize", "250")

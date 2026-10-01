@@ -39,7 +39,7 @@ open class LifeCycle(val application: Application) {
      * */
     fun onStarted(block: (KoinApplication) -> Unit){
         onStartedHandlers.add(block)
-        application.environment.monitor.subscribe(KoinApplicationStarted, block)
+        application.monitor.subscribe(KoinApplicationStarted, block)
         prepareReleaseSelf()
     }
 
@@ -50,7 +50,7 @@ open class LifeCycle(val application: Application) {
     fun onStopping(block: (Application) -> Unit){
         onStoppingHandlers.add(block)
         // https://start.insert-koin.io/#/getting-started/koin-for-ktor
-        application.environment.monitor.subscribe(ApplicationStopping, block)
+        application.monitor.subscribe(ApplicationStopping, block)
         prepareReleaseSelf()
     }
 
@@ -66,7 +66,7 @@ open class LifeCycle(val application: Application) {
 
         hasSubscriped = true
 
-        val monitor = application.environment.monitor
+        val monitor = application.monitor
 
         //停止后取消订阅的动作
         onStoppedHandler = {

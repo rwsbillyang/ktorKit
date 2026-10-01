@@ -22,10 +22,12 @@ package com.github.rwsbillyang.ktorKit.server
 import com.github.rwsbillyang.ktorKit.ApiJson
 import com.github.rwsbillyang.ktorKit.cache.CaffeineCache
 import com.github.rwsbillyang.ktorKit.cache.ICache
+import com.github.rwsbillyang.ktorKit.db.DatabaseType
 import com.github.rwsbillyang.ktorKit.db.DbConfig
-import com.github.rwsbillyang.ktorKit.db.DbType
-import com.github.rwsbillyang.ktorKit.db.MongoDataSource
+
+//import com.github.rwsbillyang.ktorKit.db.MongoDataSource
 import com.github.rwsbillyang.ktorKit.db.SqlDataSource
+
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.*
 import io.ktor.serialization.kotlinx.json.*
@@ -33,17 +35,23 @@ import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.plugins.autohead.*
-import io.ktor.server.plugins.callloging.*
+import io.ktor.server.plugins.cachingheaders.CachingHeaders
+import io.ktor.server.plugins.calllogging.CallLogging
+import io.ktor.server.plugins.conditionalheaders.ConditionalHeaders
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.cors.routing.*
+import io.ktor.server.plugins.defaultheaders.DefaultHeaders
 import io.ktor.server.plugins.forwardedheaders.*
 import io.ktor.server.plugins.partialcontent.*
 import io.ktor.server.request.*
 import io.ktor.server.resources.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.ktor.server.websocket.*
-import io.ktor.websocket.*
+import io.ktor.server.websocket.WebSockets
+import io.ktor.server.websocket.pingPeriod
+import io.ktor.server.websocket.timeout
+
+
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonBuilder
 import org.koin.core.module.Module
@@ -52,8 +60,7 @@ import org.koin.dsl.module
 import org.koin.ktor.ext.inject
 import org.koin.ktor.plugin.Koin
 import org.slf4j.event.Level
-import java.time.Duration
-import java.util.zip.Deflater
+import kotlin.time.Duration.Companion.seconds
 
 
 /**
@@ -84,19 +91,16 @@ private val _MyRoutings = mutableListOf<Routing.() -> Unit>()
  * @param pwd 连接数据的密码，mysql通常需要赋值
  * @param dbName 数据库名称，不指定则使用AppModule中的默认名称
  * @param host 数据库host 默认127.0.0.1
- * @param port 数据库port 对于NOSQL MongoDB，默认27017， SQL之MySQL为3306
+ * @param port 数据库port 0: 对于NOSQL MongoDB，默认27017， SQL之MySQL为3306
  * */
 fun Application.installModule(
     app: AppModule,
     dbName: String? = null,
-    dbType: DbType = DbType.NOSQL,
+    dbType: DatabaseType = DatabaseType.SQL_MYSQL,
     userName: String? = null,
     pwd: String? = null,
     host: String = "127.0.0.1",
-    port: Int = when(dbType){
-        DbType.NOSQL -> 27017
-        DbType.SQL -> 3306
-    }
+    port: Int = 0
 ) {
     dbName?.let { app.dbName = it }
     app.dbName?.let {
@@ -130,9 +134,10 @@ fun Application.defaultInstall(
         single<ICache> { cache }
         _dbConfigSet.forEach {
             val config = it
-            when(it.dbType){
-                DbType.NOSQL -> single(named(it.dbName)) { MongoDataSource(config.dbName, config.host, config.port) }
-                DbType.SQL -> single(named(it.dbName)) { SqlDataSource(config.dbName, config.host, config.port, config.userName, config.pwd) }
+
+            when(val dbType = it.dbType){
+                DatabaseType.NOSQL ->  TODO("update MongoDataSource")//single(named(it.dbName)) { MongoDataSource(config.dbName, config.host, config.port) }
+                else -> single(named(it.dbName)) { SqlDataSource(dbType, config.dbName, config.userName, config.pwd, config.host, config.port) }
             }
         }
         _dbConfigSet.clear()
@@ -149,7 +154,22 @@ fun Application.defaultInstall(
     install(ForwardedHeaders)
     install(XForwardedHeaders)
     install(PartialContent)
+    install(ConditionalHeaders)
+    install(DefaultHeaders) {
+        header("X-Engine", "Ktor") // will send this header with each response
+    }
 
+    install(CachingHeaders) {
+        options { call, outgoingContent ->
+            when (outgoingContent.contentType?.withoutParameters()) {
+                ContentType.Text.CSS,ContentType.Text.JavaScript  -> io.ktor.http.content.CachingOptions(
+                    CacheControl.MaxAge(maxAgeSeconds = 30 * 24 * 60 * 60)
+                )
+                else -> null
+            }
+        }
+    }
+    
     install(CallLogging) {
         level = Level.INFO
         //filter { call -> call.request.path().startsWith("/") }
@@ -192,25 +212,22 @@ fun Application.defaultInstall(
             }
         }
     }
+
     if(enableWebSocket){
         install(WebSockets) {
             contentConverter = KotlinxWebsocketSerializationConverter(Json)
-            extensions {
-                install(WebSocketDeflateExtension) {
-                    /**
-                     * Compression level to use for [java.util.zip.Deflater].
-                     */
-                    compressionLevel = Deflater.DEFAULT_COMPRESSION
+//            extensions {
+//                install(WebSocketDeflateExtension) {
+//                    //Compression level to use for [java.util.zip.Deflater].
+//                    compressionLevel = Deflater.DEFAULT_COMPRESSION
+//
+//                    //Prevent to compress small outgoing frames.
+//                    compressIfBiggerThan(bytes = 4 * 1024)
+//                }
+//            }
 
-                    /**
-                     * Prevent to compress small outgoing frames.
-                     */
-                    compressIfBiggerThan(bytes = 4 * 1024)
-                }
-            }
-
-            pingPeriod = Duration.ofSeconds(15)
-            timeout = Duration.ofSeconds(200)
+            pingPeriod = 15.seconds
+            timeout = 200.seconds
             maxFrameSize = Long.MAX_VALUE
             masking = false
         }
@@ -267,7 +284,7 @@ fun Application.installCORS(backOfNginx: Boolean) {
             allowHeader(HttpHeaders.Accept)
             allowHeader(HttpHeaders.AcceptLanguage)
             allowHeader(HttpHeaders.AcceptEncoding)
-            allowHeader(HttpHeaders.AcceptCharset)
+            //allowHeader(HttpHeaders.AcceptCharset)
             allowHeader(HttpHeaders.Connection)
 
             allowNonSimpleContentTypes = true
@@ -278,6 +295,8 @@ fun Application.installCORS(backOfNginx: Boolean) {
             allowCredentials = true
             maxAgeInSeconds = 3600
 
+
+            //anyHost() // @TODO: Don't do this in production if possible. Try to limit it.
 
 //            exposeHeader("Access-Control-Allow-Origin *")
 //            exposeHeader("Access-Control-Allow-Methods GET,POST,OPTIONS,PUT,DELETE")
@@ -301,7 +320,6 @@ fun Application.testModule(module: AppModule) {
 }
 
 @Suppress("unused") // Referenced in application.conf
-@kotlin.jvm.JvmOverloads
 fun Application.simpleTestableModule() {
     routing {
         get("/ok") {

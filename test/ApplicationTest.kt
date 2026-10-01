@@ -2,18 +2,16 @@ package com.github.rwsbillyang.ktorKit.test
 
 
 import com.github.rwsbillyang.ktorKit.ApiJson
-import com.github.rwsbillyang.ktorKit.ApiJson.apiJsonBuilder
 import com.github.rwsbillyang.ktorKit.apiBox.DataBox
 import com.github.rwsbillyang.ktorKit.client.DefaultClient
 import com.github.rwsbillyang.ktorKit.server.respondBox
 import com.github.rwsbillyang.ktorKit.server.simpleTestableModule
 
 import io.ktor.client.call.*
-import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
+import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -33,6 +31,7 @@ class ApplicationTest {
         assertEquals(HttpStatusCode.OK, response.status)
         assertEquals("OK", response.bodyAsText())
     }
+
     @Test
     fun testJsonSerialize() = testApplication{
         @Serializable
@@ -52,8 +51,8 @@ class ApplicationTest {
         }
         val client = createClient {
             //this@testApplication.
-            install(ContentNegotiation) {
-                json(ApiJson.json())
+            install(io.ktor.client.plugins.contentnegotiation.ContentNegotiation) {
+                json(ApiJson.myJson())
             }
         }
 
@@ -77,8 +76,8 @@ class ApplicationTest {
             }
         }
         val client = createClient {
-            install(ContentNegotiation) {
-                json(ApiJson.json())
+            install(io.ktor.client.plugins.contentnegotiation.ContentNegotiation) {
+                json(ApiJson.myJson())
             }
         }
 
@@ -94,7 +93,7 @@ class ApplicationTest {
         val box = DataBox.ok("OK")
         application {
             install(io.ktor.server.plugins.contentnegotiation.ContentNegotiation) {
-                json(ApiJson.json())
+                json(ApiJson.myJson())
             }
             routing {
                 get("/ok") {
@@ -103,8 +102,8 @@ class ApplicationTest {
             }
         }
         val client = createClient {
-            install(ContentNegotiation) {
-                json(ApiJson.json())
+            install(io.ktor.client.plugins.contentnegotiation.ContentNegotiation) {
+                json(ApiJson.myJson())
             }
         }
         val response = client.get("/ok")

@@ -56,7 +56,7 @@ object ApiJson {
         useArrayPolymorphism = false
     }
 
-    fun json() = Json { apiJsonBuilder() }
+    fun myJson() = Json { apiJsonBuilder() }
 
     /**
      * server侧的serialize，包含了ObjectId和LocalDateTime的自定义序列化

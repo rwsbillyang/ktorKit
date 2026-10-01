@@ -19,34 +19,46 @@
 package com.github.rwsbillyang.ktorKit.client
 
 
-import com.github.rwsbillyang.ktorKit.ApiJson
+
 import com.github.rwsbillyang.ktorKit.ApiJson.apiJsonBuilder
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.engine.cio.*
-import io.ktor.client.plugins.*
-import io.ktor.client.plugins.cache.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.plugins.logging.*
-import io.ktor.client.request.*
-import io.ktor.client.request.forms.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
-import io.ktor.http.content.*
-import io.ktor.serialization.kotlinx.json.*
-import io.ktor.utils.io.*
-import io.ktor.utils.io.core.*
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.engine.cio.endpoint
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.cache.HttpCache
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.defaultRequest
+import io.ktor.client.plugins.logging.DEFAULT
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logger
+import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.plugins.onUpload
+import io.ktor.client.request.accept
+import io.ktor.client.request.forms.MultiPartFormDataContent
+import io.ktor.client.request.forms.formData
+import io.ktor.client.request.forms.submitFormWithBinaryData
+import io.ktor.client.request.get
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.readRawBytes
+import io.ktor.http.ContentType
+import io.ktor.http.Headers
+import io.ktor.http.HttpHeaders
+import io.ktor.http.content.ByteArrayContent
+import io.ktor.http.contentType
+import io.ktor.http.isSuccess
+import io.ktor.serialization.kotlinx.json.json
+
+
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.io.File
-//使用者可直接配置
-var clientLogConfigFunc: Logging.Config.() -> Unit = {
-    logger = Logger.DEFAULT
-    level = LogLevel.INFO
-}
+
 
 val DefaultClient: HttpClient by lazy {
     HttpClient(CIO) {
@@ -68,7 +80,10 @@ val DefaultClient: HttpClient by lazy {
         }
 
 
-        install(Logging, clientLogConfigFunc)
+        install(Logging){
+            logger = Logger.DEFAULT
+            level = LogLevel.INFO
+        }
 
         //https://ktor.io/docs/http-client-engines.html#jvm-and-android
         engine {
@@ -230,7 +245,7 @@ fun doUploadRaw(
 fun doDownload(url: String, filepath: String, filename: String) = runBlocking {
     val response: HttpResponse = DefaultClient.get(url)
     if (response.status.isSuccess()) {
-        val content = ByteArrayContent(response.readBytes())
+        val content = ByteArrayContent(response.readRawBytes())
         val path = File(filepath)
         if (!path.exists()) {
             path.mkdirs()
