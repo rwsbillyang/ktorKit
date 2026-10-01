@@ -18,6 +18,8 @@ object SqlDatabaseFactory {
              host: String ="localhost", port: Int = 0) {
         val config = HikariConfig().apply {
 
+            optimizedHikariConfig()
+
             this.username = userName?:"root"
             //this.password = pwd
             if(pwd != null) password = pwd
@@ -56,7 +58,7 @@ object SqlDatabaseFactory {
                 }
             }
 
-            optimizedHikariConfig()
+
         }
 
         val dataSource = HikariDataSource(config)

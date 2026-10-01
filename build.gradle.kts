@@ -18,7 +18,7 @@ dependencies {
     implementation(ktorLibs.server.contentNegotiation)
     implementation(ktorLibs.server.core)
     implementation(ktorLibs.serialization.kotlinx.json)
-    implementation(ktorLibs.server.resources)
+    compileOnly(ktorLibs.server.resources)
     compileOnly(ktorLibs.server.auth)
     compileOnly(ktorLibs.server.auth.jwt)
     compileOnly(ktorLibs.server.autoHeadResponse)
@@ -32,7 +32,6 @@ dependencies {
     compileOnly(ktorLibs.server.partialContent)
     compileOnly(ktorLibs.server.statusPages)
     compileOnly(libs.ktor.server.websockets)
-
 
     testImplementation(kotlin("test"))
     testImplementation(ktorLibs.server.testHost)
@@ -62,15 +61,15 @@ dependencies {
     implementation(libs.logback.classic)
 
     // 依赖注入 Koin
-    compileOnly(platform(libs.koin.bom))
-    compileOnly(libs.koin.core)
-    compileOnly(libs.koin.ktor)
-    compileOnly(libs.koin.logger)
+    implementation(platform(libs.koin.bom))
+    implementation(libs.koin.core)
+    implementation(libs.koin.ktor)
+    implementation(libs.koin.logger)
     //testImplementation(libs.koin.test)
 
 
     // 缓存缓存
-    compileOnly(libs.caffeine)
+    implementation(libs.caffeine)
     testImplementation(libs.caffeine)
     //implementation(libs.ucasoft.ktorSimpleCache)
     //implementation(libs.ucasoft.ktorSimpleMemoryCache)
@@ -88,7 +87,6 @@ dependencies {
     compileOnly(libs.hikariCP)
 
 
-
     //compileOnly(libs.komapper.template)
     //compileOnly(platform(libs.komapper.platform))
     platform(libs.komapper.platform).let {
@@ -97,22 +95,25 @@ dependencies {
     }
     ksp("org.komapper:komapper-processor")
 
-    //compileOnly(libs.komapper.starter.jdbc)
+
     implementation(libs.komapper.starter.jdbc)
+    compileOnly("org.komapper:komapper-jdbc")
+
     // 内置方言（按需引入）
     compileOnly(libs.komapper.dialect.mysql.jdbc)
+    compileOnly(libs.mysql.connector.j)// JDBC 驱动
+
     compileOnly(libs.komapper.dialect.h2.jdbc)
+    compileOnly(libs.sqlite.jdbc)
+
     compileOnly(libs.komapper.dialect.postgresql.jdbc)
+    compileOnly(libs.postgresql.jdbc)
+
     compileOnly(libs.komapper.dialect.oracle.jdbc)
 
     //testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.2")
     //testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.8.2")
 
-    // JDBC 驱动
-    compileOnly("org.komapper:komapper-jdbc")
-    compileOnly("org.xerial:sqlite-jdbc:3.46.1.0")
-    compileOnly("com.mysql:mysql-connector-j:9.0.0")
-    compileOnly("org.postgresql:postgresql:42.7.4")
 
     //implementation(libs.exposed.core)
     //implementation(libs.exposed.r2dbc)
