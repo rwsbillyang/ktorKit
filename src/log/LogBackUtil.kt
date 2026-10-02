@@ -44,7 +44,7 @@ object LogBackUtil {
     private val myPattern =  "%d{YYYY-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
 
     //https://logback.qos.ch/manual/configuration.html
-    fun setupForConsole() {
+    fun setupForConsole(logLevel:Level = Level.INFO) {
         val loggerContext = LoggerFactory.getILoggerFactory() as LoggerContext
 
         val patternLayoutEncoder = PatternLayoutEncoder().apply {
@@ -63,11 +63,11 @@ object LogBackUtil {
         val root = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME) as Logger
         with(root){
             detachAndStopAllAppenders()
-            level = Level.INFO
+            level = logLevel
             addAppender(consoleAppender)
         }
     }
-    fun setupForFile() {
+    fun setupForFile(logLevel:Level = Level.INFO) {
         val loggerContext = LoggerFactory.getILoggerFactory() as LoggerContext
 
         val patternLayoutEncoder = PatternLayoutEncoder().apply {
@@ -90,12 +90,12 @@ object LogBackUtil {
         val root = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME) as Logger
         with(root){
             detachAndStopAllAppenders()
-            level = Level.INFO
+            level = logLevel
             addAppender(appender)
         }
     }
 
-    fun setupForRollingFile() {
+    fun setupForRollingFile(logLevel:Level = Level.INFO) {
         val loggerContext = LoggerFactory.getILoggerFactory() as LoggerContext
 
         val patternLayoutEncoder = PatternLayoutEncoder().apply {
@@ -128,7 +128,7 @@ object LogBackUtil {
         val root = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME) as Logger
         with(root){
             detachAndStopAllAppenders()
-            level = Level.INFO
+            level = logLevel
             isAdditive = false
             addAppender(appender)
         }
