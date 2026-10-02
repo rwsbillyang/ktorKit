@@ -7,7 +7,7 @@ import org.komapper.jdbc.JdbcDialect
 import org.komapper.dialect.mysql.jdbc.MySqlJdbcDialect
 import org.komapper.dialect.postgresql.jdbc.PostgreSqlJdbcDialect
 import org.komapper.dialect.oracle.jdbc.OracleJdbcDialect
-import org.slf4j.Logger
+
 
 
 object SqlDatabaseFactory {

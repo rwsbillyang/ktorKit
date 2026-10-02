@@ -19,7 +19,6 @@
 package com.github.rwsbillyang.ktorKit.db
 
 import com.zaxxer.hikari.HikariDataSource
-import java.sql.SQLException
 import java.util.*
 import javax.sql.DataSource
 

@@ -39,9 +39,9 @@ interface IUmiPaginationParams{
     /**
      * convert search params to Bson(not include UmiPagination.lastIdFilter) for mongodb/Kmongo
      * */
-//    fun toFilter(): Bson {
-//        TODO("Not Implement")
-//    }
+    fun toFilter(): Bson {
+        TODO("Not Implement")
+    }
 
     /**
      * convert search params to SqlPagination for mysql/komapper

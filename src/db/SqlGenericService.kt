@@ -66,6 +66,7 @@ fun orWhere(vararg arrays: WhereDeclaration?): WhereDeclaration?{
     }
     return where
 }
+
 /**
  * basic CRUD service based on Komapper（https://github.com/komapper/komapper）
  *
@@ -277,6 +278,11 @@ abstract class AbstractSqlService(cache: ICache) : CacheService(cache) {
         query
     }
 }
+
+
+/**
+ * 某个SQL DB的通用访问service
+ * */
 open class SqlGenericService(dbName: String, cache: ICache) : AbstractSqlService(cache) {
     override val dbSource: SqlDataSource by inject(qualifier = named(dbName))
 
