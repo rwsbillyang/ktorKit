@@ -40,6 +40,7 @@ import org.koin.core.module.Module
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import org.koin.ktor.plugin.Koin
+import org.koin.logger.slf4jLogger
 
 
 /**
@@ -94,15 +95,15 @@ fun Application.installModule(
 /**
  * 去掉了enableJwt，改为根据依赖自动添加。 为false时只适合于route中无authentication时的情况
  * 去掉了enableJsonApit，改为根据依赖自动添加。 是否打开api接口json序列化
- * @param backOfNginx 是否部署在nginx之后，只有添加了CORS依赖才生效
+ * @param autoInstallPlugins    若为true，自动安装一些常用plugin（若添加了依赖）；付哦为false需自行安装
  * @param logHeaders 需要输出哪些请求头，用于调试
  * @param cache 自动注入 CaffeineCache，如不需要可使用VoidCache代替
  * @param jsonBuilderAction 添加额外的自定义json配置，通常用于添加自己的json contextual
  * */
-@Suppress("unused") // Referenced in application.conf
-@kotlin.jvm.JvmOverloads
+//@Suppress("unused") // Referenced in application.conf
+//@kotlin.jvm.JvmOverloads
 fun Application.defaultInstall(
-    backOfNginx: Boolean,
+    autoInstallPlugins: Boolean,
     logHeaders: List<String>? = null, //"X-Auth-uId","X-Auth-UserId", "X-Auth-ExternalUserId", "X-Auth-oId", "X-Auth-unId","X-Auth-CorpId","Authorization"
     cache: ICache = CaffeineCache(),
     jsonBuilderAction: (JsonBuilder.() -> Unit)? = null
@@ -122,14 +123,14 @@ fun Application.defaultInstall(
 
     _MyKoinModules.add(0, module)
     install(Koin) {
+        slf4jLogger()
         modules(_MyKoinModules)
     }
     _MyKoinModules.clear()//依赖注入后清除
     //log.info("_MyKoinModules.size=${_MyKoinModules.size}")
 
-    installOptionalKtorPlugins()
-
-    installOptionalKtorPluginsWithConfig(logHeaders, jsonBuilderAction, backOfNginx)
+    if(autoInstallPlugins)
+        installOptionalKtorPlugins(logHeaders, jsonBuilderAction)
 
     _MyRoutings.add {
         get("/ok") {

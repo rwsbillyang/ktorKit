@@ -1,9 +1,49 @@
 package com.github.rwsbillyang.ktorKit.server
 
 
+import com.github.rwsbillyang.ktorKit.ApiJson
+import io.ktor.http.CacheControl
+import io.ktor.http.ContentType
+import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
+import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.*
-import org.slf4j.LoggerFactory
+import io.ktor.server.auth.Authentication
+import io.ktor.server.auth.jwt.jwt
+import io.ktor.server.plugins.autohead.AutoHeadResponse
+import io.ktor.server.plugins.cachingheaders.CachingHeaders
+import io.ktor.server.plugins.calllogging.CallLogging
+import io.ktor.server.plugins.conditionalheaders.ConditionalHeaders
+import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.plugins.defaultheaders.DefaultHeaders
+import io.ktor.server.plugins.forwardedheaders.ForwardedHeaders
+import io.ktor.server.plugins.forwardedheaders.XForwardedHeaders
+import io.ktor.server.plugins.partialcontent.PartialContent
+import io.ktor.server.request.httpMethod
+import io.ktor.server.request.uri
+import io.ktor.server.resources.Resources
+import io.ktor.server.websocket.WebSockets
+import io.ktor.server.websocket.pingPeriod
+import io.ktor.server.websocket.timeout
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonBuilder
+import org.koin.ktor.ext.inject
+import org.slf4j.event.Level
+import kotlin.getValue
+import kotlin.time.Duration.Companion.seconds
 
+
+/**
+ * 安全安装单个插件（编译时已知类型）
+ */
+private fun Application.safeInstall(pluginName: String, installer: () -> Unit) {
+    try {
+        installer()
+        log.info("✅ Auto-installed plugin: $pluginName")
+    } catch (t: Throwable) {
+        // 捕获 Throwable 以覆盖 ClassNotFoundException / NoClassDefFoundError / IllegalStateException 等
+        log.debug("Plugin $pluginName skipped")
+    }
+}
 
 /**
  *     若添加了依赖库，自动install下面这些plugin
@@ -14,66 +54,107 @@ import org.slf4j.LoggerFactory
  *     install(PartialContent)
  *     install(ConditionalHeaders)
  *     install(DefaultHeaders)
+ *     CallLogging, CachingHeaders,Negotiation,Websockets,JWT
  * */
-fun Application.installOptionalKtorPlugins() {
-    val plugins = listOf(
-        "AutoHeadResponse" to "io.ktor.server.plugins.autohead.AutoHeadResponse",
-        "ForwardedHeaders" to "io.ktor.server.plugins.forwardedheaders.ForwardedHeaders",
-        "XForwardedHeaders" to "io.ktor.server.plugins.forwardedheaders.XForwardedHeaders",
-        "PartialContent" to "io.ktor.server.plugins.partialcontent.PartialContent",
-        "ConditionalHeaders" to "io.ktor.server.plugins.conditionalheaders.ConditionalHeaders",
-        "DefaultHeaders" to "io.ktor.server.plugins.defaultheaders.DefaultHeaders",
-        //"CachingHeaders" to "io.ktor.server.plugins.cachingheaders.CachingHeaders",
-        //"CallLogging" to "io.ktor.server.plugins.calllogging.CallLogging",
-        //"WebSockets" to "io.ktor.server.websocket.WebSockets",
-        "Resources" to "io.ktor.server.resources.Resources",
-        //"Koin" to "org.koin.ktor.plugin.Koin"
-    )
+internal fun Application.installOptionalKtorPlugins(
+    logHeaders: List<String>? = null, //"X-Auth-uId","X-Auth-UserId", "X-Auth-ExternalUserId", "X-Auth-oId", "X-Auth-unId","X-Auth-CorpId","Authorization"
+    jsonBuilderAction: (JsonBuilder.() -> Unit)? = null
+) {
+    safeInstall("AutoHeadResponse") { install(AutoHeadResponse) }
+    safeInstall("ForwardedHeaders") { install(ForwardedHeaders) }
+    safeInstall("XForwardedHeaders") { install(XForwardedHeaders) }
+    safeInstall("PartialContent") { install(PartialContent) }
+    safeInstall("ConditionalHeaders") { install(ConditionalHeaders) }
+    safeInstall("DefaultHeaders") { install(DefaultHeaders) }
+    safeInstall("Resources") { install(Resources) }
 
-    plugins.forEach { (name, className) ->
-        installPluginIfPresent(className, name)
-    }
-
+    // 如果需要配置，也可以直接写：
+    // safeInstall("ContentNegotiation") {
+    //     install(ContentNegotiation) { json() }
+    // }
+    safeInstall("CallLogging") { installCallLogging(logHeaders) }
+    safeInstall("CachingHeaders") { installCachingHeaders()}
+    safeInstall("Negotiation") { installContentNegotiation(jsonBuilderAction) }
+    safeInstall("Websockets") { installWebsockets() }
+    safeInstall("JWT") { installJwt() }
 }
 
-private val optionalPluginLogger = LoggerFactory.getLogger("OptionalPluginInstaller")
 
 /**
- * 如果 classpath 中存在指定的 Ktor 插件（Kotlin object），则自动 install。
- * @param className 插件的全限定类名（如 "io.ktor.server.plugins.autohead.AutoHeadResponse"）
- * @param pluginName 用于日志打印的插件名称
- * @return 是否成功安装
- */
-private fun Application.installPluginIfPresent(className: String, pluginName: String? = null): Boolean {
-    return try {
-        // 1. 检查类是否存在
-        val clazz = Class.forName(className)
-
-        // 2. 获取 Kotlin object 的 INSTANCE（Ktor 插件都是单例对象）
-        val pluginInstance = clazz.getField("INSTANCE").get(null)
-
-        // 3. 确认是 Ktor Plugin 类型并安装
-        if (pluginInstance is Plugin<*, *, *>) {
-            @Suppress("UNCHECKED_CAST")
-            install(pluginInstance as Plugin<Application, Any, Any>)
-            optionalPluginLogger.info("✅ Auto-installed plugin: ${pluginName ?: className}")
-            true
-        } else {
-            optionalPluginLogger.warn("⚠️ Class $className is not a Ktor Plugin, skipped.")
-            false
+ * @param logHeaders: eg. "X-Auth-uId","X-Auth-UserId", "X-Auth-ExternalUserId", "X-Auth-oId", "X-Auth-unId","X-Auth-CorpId","Authorization"
+ * */
+fun Application.installCallLogging(logHeaders: List<String>? = null,){
+    install(CallLogging) {
+        level = Level.INFO
+        //filter { call -> call.request.path().startsWith("/") }
+        if (!logHeaders.isNullOrEmpty()) {
+            format { call ->
+                "${call.request.httpMethod.value} ${call.request.uri}  ${call.authHeaders(logHeaders)} -> ${call.response.status()}"
+            }
+        }else{
+            format { call ->
+                "${call.request.httpMethod.value} ${call.request.uri}  -> ${call.response.status()}"
+            }
         }
-    } catch (e: ClassNotFoundException) {
-        // 依赖库不存在，静默跳过（这是预期行为）
-        optionalPluginLogger.debug("Plugin not in classpath, skipped: $className")
-        false
-    } catch (e: NoSuchFieldException) {
-        optionalPluginLogger.error("Plugin class $className is not a singleton object.")
-        false
-    } catch (e: Exception) {
-        optionalPluginLogger.error("Failed to install plugin $className", e)
-        false
     }
 }
+
+fun Application.installCachingHeaders(){
+    install(CachingHeaders) {
+        options { call, outgoingContent ->
+            when (outgoingContent.contentType?.withoutParameters()) {
+                ContentType.Text.CSS,ContentType.Text.JavaScript  -> io.ktor.http.content.CachingOptions(
+                    CacheControl.MaxAge(maxAgeSeconds = 30 * 24 * 60 * 60)
+                )
+                else -> null
+            }
+        }
+    }
+}
+
+fun Application.installContentNegotiation(jsonBuilderAction: (JsonBuilder.() -> Unit)? = null){
+    //https://ktor.io/servers/features/content-negotiation/serialization-converter.html
+    //https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/custom_serializers.md
+    install(ContentNegotiation) {
+        json(
+            json = if (jsonBuilderAction == null) ApiJson.serverSerializeJson() else Json(ApiJson.serverSerializeJson(), jsonBuilderAction),
+            contentType = ContentType.Application.Json
+        )
+    }
+}
+
+fun Application.installWebsockets(){
+    install(WebSockets) {
+        contentConverter = KotlinxWebsocketSerializationConverter(Json)
+//            extensions {
+//                install(WebSocketDeflateExtension) {
+//                    //Compression level to use for [java.util.zip.Deflater].
+//                    compressionLevel = Deflater.DEFAULT_COMPRESSION
+//
+//                    //Prevent to compress small outgoing frames.
+//                    compressIfBiggerThan(bytes = 4 * 1024)
+//                }
+//            }
+
+        pingPeriod = 15.seconds
+        timeout = 200.seconds
+        maxFrameSize = Long.MAX_VALUE
+        masking = false
+    }
+}
+
+fun Application.installJwt(){
+    val jwtHelper: AbstractJwtHelper by inject()
+    install(Authentication) {
+        jwt {
+            verifier(jwtHelper.getVerifier()) //Configure a token verifier
+            this.realm = jwtHelper.realm
+            validate { credential -> jwtHelper.validate(credential) } // Validate JWT payload
+        }
+    }
+}
+
+
 
 // 只支持 kotlinx serialization
 //fun Application.installContentNegotiationIfPresent() {
