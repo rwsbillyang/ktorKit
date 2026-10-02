@@ -19,10 +19,10 @@
 package com.github.rwsbillyang.ktorKit.server
 
 import com.github.rwsbillyang.ktorKit.ApiJson
+import com.github.rwsbillyang.ktorKit.util.randomAlphanumeric
 import io.ktor.websocket.*
 
 import kotlinx.serialization.Serializable
-import org.apache.commons.lang3.RandomStringUtils
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.util.concurrent.ConcurrentHashMap
@@ -32,7 +32,7 @@ class WsSessions: KoinComponent {
     private val sessionMap = ConcurrentHashMap<String, DefaultWebSocketSession>()
     fun session(id: String) = sessionMap[id]
     fun addSession(session: DefaultWebSocketSession): String{
-        val id = RandomStringUtils.randomAlphanumeric(19)
+        val id = randomAlphanumeric(19)
         sessionMap[id]=session
         return id
     }

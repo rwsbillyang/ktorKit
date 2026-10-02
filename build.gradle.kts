@@ -122,8 +122,8 @@ dependencies {
 
 
     // 公共工具包
-    compileOnly(libs.apache.commons.lang3)
-    implementation(libs.apache.commons.codec)
+    //compileOnly(libs.apache.commons.lang3)
+    //implementation(libs.apache.commons.codec)
 
 
     // 邮件

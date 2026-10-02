@@ -9,7 +9,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
-import org.apache.commons.codec.digest.DigestUtils
+
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
@@ -27,7 +27,7 @@ object UploadUtil {
      * */
     suspend fun handleBase64(path: String, filename: String, base64: String, md5: String?): String?{
         if(md5 != null){
-            val md5_ = DigestUtils.md5Hex(base64)
+            val md5_ = md5Hex(base64)
             if(md5 != md5_)
             {
                 return null

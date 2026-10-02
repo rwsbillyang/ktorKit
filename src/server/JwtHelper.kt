@@ -24,12 +24,13 @@ import com.auth0.jwt.JWTVerifier
 import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.exceptions.JWTCreationException
 import com.auth0.jwt.interfaces.Payload
+import com.github.rwsbillyang.ktorKit.util.randomAlphanumeric
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 
-import org.apache.commons.lang3.RandomStringUtils
+
 import org.koin.core.component.KoinComponent
 
 import org.slf4j.LoggerFactory
@@ -314,7 +315,7 @@ abstract class UserInfoJwtHelper(
     fun generateToken(authUserInfo: AuthUserInfo) = generateToken(authUserInfo.uId, authUserInfo.level,authUserInfo.role)
 
     fun generateToken(uId: String, level: Int?, role: List<String>?): String {
-        val jti = RandomStringUtils.randomAlphanumeric(8)
+        val jti = randomAlphanumeric(8)
         return generateToken(jti) {
             withClaim(IAuthUserInfo.KEY_UID, uId)
             if (level != null) withClaim(AuthUserInfo.KEY_LEVEL, level.toString())
