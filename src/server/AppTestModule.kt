@@ -17,7 +17,7 @@ fun Application.testModule(module: AppModule) {
             single<Application> { app }
         }), null))
     installModule(module)
-    defaultInstall(true)
+    lastInstall(true)
 }
 
 @Suppress("unused") // Referenced in application.conf

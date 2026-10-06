@@ -27,6 +27,54 @@ enum class SortKeyType{
  TypeNumber, TypeString, TypeObjectId
 }
 
+
+/**
+ * pagination info, sort info, and filter key info
+ * @param pageSize default 20
+ * @param current starts from 1, not 0
+ * @param sKey sort key.  mongodb example: "sorter":{"updatedAt":"ascend"} , the sort key is "updatedAt"
+ * @param sort 1 for asc，-1 for desc, same as MongoDB
+ * @param sKeyType the type of sKey
+ * @param lastId the last value of sort key in current page when load more
+ * @param fKey filter key
+ * @param filters  items which contains values of filters, "filter":{"someKey":["value1",123,"value3"]}
+ *
+ * using var instead of val，aims to modify them for permission
+ * */
+@Serializable
+class UmiPagination(
+    var pageSize: Int = 10,
+    var current: Int = 1,
+    var sKey: String = "_id", //sortKey
+    var sort: Int = Sort.DESC, //1用于升序，而-1用于降序
+    val sKeyType: SortKeyType = SortKeyType.TypeObjectId,
+    val lastId: String? = null,
+    var fKey: String? = null, //filter key
+    var filters: List<String>? = null
+){
+    /**
+     * for mongodb/kmongo sort
+     * */
+    val sortJson = "{'${sKey}':${sort}}"
+
+    /**
+     * setup mongodb bson for pagination
+     * new version: ignore the parameter. legacy: pass lastId in listSearchParams,
+     * new version, lastId is in UmiPagination, legacy version it's in listSearchParams
+     * @return mongodb bson
+     * */
+//    fun lastIdFilter(): Bson? {
+//        if(lastId == null) return null
+//        val s = if(sort == Sort.DESC) "\$lt" else "\$gt"
+//        return when(sKeyType){
+//            SortKeyType.TypeNumber -> "{ '${sKey}': { $s: $lastId } }"
+//            SortKeyType.TypeString -> "{ '${sKey}': { $s: `$lastId` } }"
+//            SortKeyType.TypeObjectId -> "{ '${sKey}': { $s: ObjectId(\"${lastId.toObjectId().toHexString()}\") } }"
+//        }.bson
+//    }
+}
+
+
 /**
  * front end show list, encode search parameters and pagination info: &umi=encodeURIComponent(pagination_and_sort_parameters:UmiPagination)
  * sever side get umi value,  using pagination to decode it and get UmiPagination info
@@ -49,52 +97,6 @@ interface IUmiPaginationParams{
     fun toSqlPagination(): SqlPagination{
         TODO("Not Implement")
     }
-}
-
-/**
- * pagination info, sort info, and filter key info
- * @param pageSize default 20
- * @param current starts from 1, not 0
- * @param sKey sort key.  mongodb example: "sorter":{"updatedAt":"ascend"} , the sort key is "updatedAt"
- * @param sort 1 for asc，-1 for desc, same as MongoDB
- * @param sKeyType the type of sKey
- * @param lastId the last value of sort key in current page when load more
- * @param fKey filter key
- * @param filters  items which contains values of filters, "filter":{"someKey":["value1",123,"value3"]}
- *
- * using var instead of val，aims to modify them for permission
- * */
-@Serializable
-class UmiPagination(
-     var pageSize: Int = 10,
-     var current: Int = 1,
-     var sKey: String = "_id", //sortKey
-     var sort: Int = Sort.DESC, //1用于升序，而-1用于降序
-     val sKeyType: SortKeyType = SortKeyType.TypeObjectId,
-     val lastId: String? = null,
-     var fKey: String? = null, //filter key
-     var filters: List<String>? = null
-){
-    /**
-     * for mongodb/kmongo sort
-     * */
-    val sortJson = "{'${sKey}':${sort}}"
-
-    /**
-     * setup mongodb bson for pagination
-     * new version: ignore the parameter. legacy: pass lastId in listSearchParams,
-     * new version, lastId is in UmiPagination, legacy version it's in listSearchParams
-     * @return mongodb bson
-     * */
-//    fun lastIdFilter(): Bson? {
-//        if(lastId == null) return null
-//        val s = if(sort == Sort.DESC) "\$lt" else "\$gt"
-//        return when(sKeyType){
-//            SortKeyType.TypeNumber -> "{ '${sKey}': { $s: $lastId } }"
-//            SortKeyType.TypeString -> "{ '${sKey}': { $s: `$lastId` } }"
-//            SortKeyType.TypeObjectId -> "{ '${sKey}': { $s: ObjectId(\"${lastId.toObjectId().toHexString()}\") } }"
-//        }.bson
-//    }
 }
 
 

@@ -27,9 +27,17 @@ enum class DatabaseType {
     SQL_MYSQL, SQL_POSTGRL, SQL_KINGBASE, SQL_ORACLE, SQL_DAMENG, SQL_SQLITE
 }
 
+/**
+ * @param dbName 数据库名称(or sqlite file name) 确保名称唯一，否则依赖注入时可能识别错误
+ * @param dbType DbType.NOSQL, SQL_MYSQL, SQL_POSTGRL, SQL_KINGBASE, SQL_ORACLE, SQL_DAMENG, SQL_SQLITE
+ * @param host 数据库host 默认127.0.0.1
+ * @param port 数据库port 0: 对于NOSQL MongoDB，默认27017， SQL之MySQL为3306
+ * @param userName 连接数据的用户名，mysql通常需要赋值
+ * @param pwd 连接数据的密码，mysql通常需要赋值
+ * */
 class DbConfig(
     val dbName: String,
-    val dbType: DatabaseType = DatabaseType.SQL_MYSQL,
+    val dbType: DatabaseType,
     val host: String = "127.0.0.1",
     val port: Int = 0,
     val userName: String? = null,
@@ -42,7 +50,6 @@ class DbConfig(
             other.dbName == dbName && other.dbType == dbType && other.host == host && other.port == port
         } else
             false
-
     }
 
     override fun hashCode(): Int {

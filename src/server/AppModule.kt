@@ -36,6 +36,7 @@ import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import kotlinx.serialization.json.JsonBuilder
+import org.koin.core.context.GlobalContext.loadKoinModules
 import org.koin.core.module.Module
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
@@ -45,12 +46,12 @@ import org.koin.logger.slf4jLogger
 
 /**
  * @param modules 需要注入的实例的业务模块列表
- * @param dbName 数据库名称，模块默认提供，为null，则不注入DataSource；installAppModule若提供时将覆盖它
+ * @param dbConfig 若为空，则不使用数据库
  * @param routing route api
  * */
 class AppModule(
-    val modules: List<Module>?,
-    var dbName: String?,
+    val modules: List<Module>,
+    var dbConfig: DbConfig?,
     val routing: (Routing.() -> Unit)? = null
 )
 
@@ -66,35 +67,24 @@ private val _MyRoutings = mutableListOf<Routing.() -> Unit>()
  * （2）将routing配置加入私有全局列表，便于后面执行，添加endpoint
  * （3）自动注入了DataSource（以数据库名称作为qualifier）
  * @param app 待安装的module
- * @param dbType DbType.NOSQL, DbType.SQL
- * @param userName 连接数据的用户名，mysql通常需要赋值
- * @param pwd 连接数据的密码，mysql通常需要赋值
- * @param dbName 数据库名称，不指定则使用AppModule中的默认名称
- * @param host 数据库host 默认127.0.0.1
- * @param port 数据库port 0: 对于NOSQL MongoDB，默认27017， SQL之MySQL为3306
  * */
-fun Application.installModule(
-    app: AppModule,
-    dbName: String? = null,
-    dbType: DatabaseType = DatabaseType.SQL_MYSQL,
-    userName: String? = null,
-    pwd: String? = null,
-    host: String = "127.0.0.1",
-    port: Int = 0
-) {
-    dbName?.let { app.dbName = it }
-    app.dbName?.let {
-        _dbConfigSet.add(DbConfig(it, dbType, host, port, userName, pwd))
-    }
+fun Application.installModule(app: AppModule)
+{
+    app.dbConfig?.let{_dbConfigSet.add(it)}
+    app.routing?.let { _MyRoutings.add(it) }
 
-    app.modules?.let { _MyKoinModules.plusAssign(it) }
-    app.routing?.let { _MyRoutings.plusAssign(it) }
+    _MyKoinModules.plusAssign(app.modules)
+
+    //loadKoinModules(app.modules)
+    //app.routing?.let { routing { it() } }
 }
 
 
 /**
+ * 必须在所有的installModule之后调用
+ *
  * 去掉了enableJwt，改为根据依赖自动添加。 为false时只适合于route中无authentication时的情况
- * 去掉了enableJsonApit，改为根据依赖自动添加。 是否打开api接口json序列化
+ * 去掉了enableJsonApi，改为根据依赖自动添加。 是否打开api接口json序列化
  * @param autoInstallPlugins    若为true，自动安装一些常用plugin（若添加了依赖）；付哦为false需自行安装
  * @param logHeaders 需要输出哪些请求头，用于调试
  * @param cache 自动注入 CaffeineCache，如不需要可使用VoidCache代替
@@ -102,7 +92,7 @@ fun Application.installModule(
  * */
 //@Suppress("unused") // Referenced in application.conf
 //@kotlin.jvm.JvmOverloads
-fun Application.defaultInstall(
+fun Application.lastInstall(
     autoInstallPlugins: Boolean,
     logHeaders: List<String>? = null, //"X-Auth-uId","X-Auth-UserId", "X-Auth-ExternalUserId", "X-Auth-oId", "X-Auth-unId","X-Auth-CorpId","Authorization"
     cache: ICache = CaffeineCache(),
@@ -112,10 +102,10 @@ fun Application.defaultInstall(
         single<ICache> { cache }
         _dbConfigSet.forEach {
             val config = it
-
             when(val dbType = it.dbType){
                 DatabaseType.NOSQL ->  TODO("update MongoDataSource")//single(named(it.dbName)) { MongoDataSource(config.dbName, config.host, config.port) }
-                else -> single(named(it.dbName)) { SqlDataSource(dbType, config.dbName, config.userName, config.pwd, config.host, config.port) }
+                //在添加到_dbConfigSet时，区别了nam额， dbType, host, port, 依赖注入标识它只用了dbName
+                else -> single(named(it.dbName)) { SqlDataSource(config) }
             }
         }
         _dbConfigSet.clear()
@@ -126,8 +116,8 @@ fun Application.defaultInstall(
         slf4jLogger()
         modules(_MyKoinModules)
     }
+    log.info("_MyKoinModules.size=${_MyKoinModules.size}")
     _MyKoinModules.clear()//依赖注入后清除
-    //log.info("_MyKoinModules.size=${_MyKoinModules.size}")
 
     if(autoInstallPlugins)
         installOptionalKtorPlugins(logHeaders, jsonBuilderAction)
@@ -139,7 +129,6 @@ fun Application.defaultInstall(
     }
 
     log.info("_MyRoutings.size=${_MyRoutings.size}")
-
     _MyRoutings.forEach {
         routing {
             it()

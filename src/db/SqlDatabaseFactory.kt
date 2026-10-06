@@ -13,9 +13,14 @@ import org.komapper.dialect.oracle.jdbc.OracleJdbcDialect
 object SqlDatabaseFactory {
     lateinit var db: JdbcDatabase
 
-    fun init(dbType: DatabaseType, dbName: String,
-             userName: String? = null, pwd: String? = null,
-             host: String ="localhost", port: Int = 0) {
+    fun init(dbConfig: DbConfig) {
+        val dbType = dbConfig.dbType
+        val dbName = dbConfig.dbName
+        val host = dbConfig.host
+        val port = dbConfig.port
+        val userName = dbConfig.userName
+        val pwd = dbConfig.pwd
+
         val config = HikariConfig().apply {
 
             optimizedHikariConfig()
@@ -30,7 +35,7 @@ object SqlDatabaseFactory {
                     driverClassName = "org.sqlite.JDBC"
                     maximumPoolSize = 1
                     // 可以是绝对路径，也可以是相对于运行路径的相对路径（如 ./data.db）
-                    jdbcUrl = "jdbc:sqlite:./data.db"
+                    jdbcUrl = "jdbc:sqlite:${dbName}"
                 }
                 DatabaseType.SQL_MYSQL -> {
                     driverClassName = "com.mysql.cj.jdbc.Driver"

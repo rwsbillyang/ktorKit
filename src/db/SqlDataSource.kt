@@ -22,9 +22,9 @@ import org.koin.core.component.KoinComponent
 import org.komapper.jdbc.JdbcDatabase
 
 
-class SqlDataSource(dbType: DatabaseType, dbName: String, userName: String? = null, pwd: String? = null, host: String ="localhost", port: Int = 0): KoinComponent {
+class SqlDataSource(dbConfig: DbConfig): KoinComponent {
     init {
-        SqlDatabaseFactory.init(dbType, dbName, userName, pwd, host, port)
+        SqlDatabaseFactory.init(dbConfig)
     }
     val db: JdbcDatabase = SqlDatabaseFactory.db
 }
