@@ -110,6 +110,8 @@ dependencies {
     compileOnly(libs.postgresql.jdbc)
 
     compileOnly(libs.komapper.dialect.oracle.jdbc)
+    //compileOnly("org.komapper:komapper-dialect-oracle-jdbc:7.0.0")
+    compileOnly("com.oracle.database.jdbc:ojdbc11:23.5.0.24.07")  // JDK 11+
 
     //testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.2")
     //testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.8.2")

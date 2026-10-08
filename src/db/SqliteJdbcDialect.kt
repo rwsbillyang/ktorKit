@@ -1,57 +1,47 @@
 package com.github.rwsbillyang.ktorKit.db
 
-import org.komapper.core.BuilderDialect
-import org.komapper.core.dsl.builder.EntityUpsertStatementBuilder
-import org.komapper.core.dsl.builder.SchemaStatementBuilder
-import org.komapper.core.dsl.context.EntityUpsertContext
-import org.komapper.core.dsl.metamodel.EntityMetamodel
 import org.komapper.dialect.h2.jdbc.H2JdbcDialect
-import org.komapper.jdbc.JdbcDialect
+
 import java.sql.SQLException
 
 /**
  * 自定义实现的 SQLite JDBC 方言
  */
-class SqliteJdbcDialect(
-    override val driver: String = "org.sqlite.JDBC"
-) : H2JdbcDialect {
+class SqliteJdbcDialect : H2JdbcDialect {
 
-    // SQLite 的标识符转义策略：使用双引号 " 或反引号 `
+    // 不要 override driver，保持父类的 "org.h2.Driver"
+    // 这样 Komapper 就能找到对应的数据类型映射，解决 String 找不到的问题
+
+    // SQLite 标识符用双引号（和 H2 默认一样，这行不覆写也行，但写了更明确）
     override fun enquote(name: String): String {
         return "\"$name\""
     }
 
-    // 这里可以根据需要，覆写其他 SQLite 独有的类型映射或语法细节
-}
-
-class CustomSqliteDialect : JdbcDialect {
-    override val driver: String = "org.sqlite.JDBC"
-
-    override fun enquote(name: String): String = "\"$name\""
-
-    // 覆盖/补充数据类型映射，例如 UUID, Long, Int 等
-    // ...实现 JdbcDialect 要求的其它抽象属性与方法
-    override fun getSequenceSql(sequenceName: String): String {
-        TODO("Not yet implemented")
-    }
-
-    override fun getSchemaStatementBuilder(dialect: BuilderDialect): SchemaStatementBuilder {
-        TODO("Not yet implemented")
-    }
-
-    override fun <ENTITY : Any, ID : Any, META : EntityMetamodel<ENTITY, ID, META>> getEntityUpsertStatementBuilder(
-        dialect: BuilderDialect,
-        context: EntityUpsertContext<ENTITY, ID, META>,
-        entities: List<ENTITY>
-    ): EntityUpsertStatementBuilder<ENTITY> {
-        TODO("Not yet implemented")
-    }
-
-    // 告诉 Komapper 本数据库支持 LIMIT ... OFFSET ... 分页
-    //fun supportsLimitOffset(): Boolean = true
+    // 【可选】覆写唯一约束异常判断，SQLite 的错误码是 19
     override fun isUniqueConstraintViolationError(exception: SQLException): Boolean {
-        TODO("Not yet implemented")
+        // SQLite 唯一约束违反返回 errorCode = 19 (SQLITE_CONSTRAINT)
+        return exception.errorCode == 19
     }
 
-
+    // 其他语法 H2 和 SQLite 很相似，基本不需要改
 }
+
+//class CustomSqliteDialect : JdbcDialect {
+//    // 手动注册 SQLite 兼容的类型映射
+//    private val dataOperator = DefaultJdbcDataOperator(
+//        "org.sqlite.JDBC",
+//        listOf(
+//            JdbcStringDataType("TEXT"),
+//            JdbcIntDataType("INTEGER"),
+//            JdbcLongDataType("INTEGER"),
+//            JdbcBooleanDataType("INTEGER"),
+//            JdbcDoubleDataType("REAL"),
+//            // 按需添加 UUID、ByteArray 等
+//        )
+//    )
+//
+//    override val driver: String = "org.sqlite.JDBC"
+//    override fun enquote(name: String) = "\"$name\""
+//    override fun getDataOperator() = dataOperator
+//    // ... 实现其他必要方法
+//}
