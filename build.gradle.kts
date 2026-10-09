@@ -103,7 +103,7 @@ dependencies {
     compileOnly(libs.komapper.dialect.mysql.jdbc)
     compileOnly(libs.mysql.connector.j)// JDBC 驱动
 
-    compileOnly(libs.komapper.dialect.h2.jdbc)
+    //compileOnly(libs.komapper.dialect.h2.jdbc)
     compileOnly(libs.sqlite.jdbc)
 
     compileOnly(libs.komapper.dialect.postgresql.jdbc)

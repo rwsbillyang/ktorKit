@@ -1,13 +1,17 @@
 package com.github.rwsbillyang.ktorKit.db
 
-import org.komapper.dialect.h2.jdbc.H2JdbcDialect
+
+import org.komapper.dialect.mysql.MySqlVersion
+import org.komapper.dialect.mysql.jdbc.MySqlJdbcDialect
+
 
 import java.sql.SQLException
 
 /**
  * 自定义实现的 SQLite JDBC 方言
  */
-class SqliteJdbcDialect : H2JdbcDialect {
+
+class SqliteJdbcDialect(override val version: MySqlVersion = MySqlVersion.V8) : MySqlJdbcDialect {
 
     // 不要 override driver，保持父类的 "org.h2.Driver"
     // 这样 Komapper 就能找到对应的数据类型映射，解决 String 找不到的问题
@@ -19,11 +23,8 @@ class SqliteJdbcDialect : H2JdbcDialect {
 
     // 【可选】覆写唯一约束异常判断，SQLite 的错误码是 19
     override fun isUniqueConstraintViolationError(exception: SQLException): Boolean {
-        // SQLite 唯一约束违反返回 errorCode = 19 (SQLITE_CONSTRAINT)
-        return exception.errorCode == 19
+        return exception.errorCode == 19 || exception.errorCode == 2067
     }
-
-    // 其他语法 H2 和 SQLite 很相似，基本不需要改
 }
 
 //class CustomSqliteDialect : JdbcDialect {
