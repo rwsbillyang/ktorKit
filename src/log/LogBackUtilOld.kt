@@ -36,8 +36,8 @@ import org.slf4j.LoggerFactory
 import java.nio.charset.Charset
 import java.util.*
 
-
-object LogBackUtil {
+@Deprecated("use LogBackUtil instead")
+object LogBackUtilOld {
     private const val maxFileSize = "50MB"
     private const val totalSizeCap = "10GB"
     private const val MaxHistory = 30
