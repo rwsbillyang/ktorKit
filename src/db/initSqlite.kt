@@ -13,18 +13,17 @@ import org.komapper.core.dsl.metamodel.EntityMetamodel
  * */
 data class SqliteConfig(
     override val config: DbConfig,
-    override val entities: List<EntityMetamodel<*, *, *>>,
-    override val forceRecreate: Boolean = false
+    override val entities: List<EntityMetamodel<*, *, *>>
 ) : InitDbConfig
 
 /**
  * SQLite 初始化：建文件 + 按实体建表
  *
  */
-fun initSqlite(config: SqliteConfig) : Boolean{
+fun initSqlite(config: SqliteConfig, forceRecreate: Boolean) : Boolean{
     val dbPath = config.config.dbName
     val entities = config.entities
-    val forceRecreate = config.forceRecreate
+    //val forceRecreate = config.forceRecreate
 
     val file = File(dbPath)
 

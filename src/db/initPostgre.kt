@@ -20,7 +20,6 @@ import org.komapper.core.dsl.metamodel.EntityMetamodel
 data class PostgresqlConfig(
     override val config: DbConfig,
     override val entities: List<EntityMetamodel<*, *, *>>,
-    override val forceRecreate: Boolean = false,
 
     val adminUser: String,
     val adminPassword: String
@@ -30,7 +29,7 @@ data class PostgresqlConfig(
  * PostgreSQL 初始化：建库（可选强制重建）+ 按实体建表
  *
  */
-fun initPostgresql( config: PostgresqlConfig): Boolean {
+fun initPostgresql( config: PostgresqlConfig, forceRecreate: Boolean): Boolean {
     val host = config.config.host
     val port = config.config.port
     val database = config.config.dbName
@@ -40,7 +39,7 @@ fun initPostgresql( config: PostgresqlConfig): Boolean {
     val adminUser = config.adminUser
     val adminPassword = config.adminPassword
     val entities = config.entities
-    val forceRecreate = config.forceRecreate
+    //val forceRecreate = config.forceRecreate
 
 
     // PostgreSQL 管理员连接通常连到默认维护库 "postgres"

@@ -20,7 +20,6 @@ import org.komapper.core.dsl.metamodel.EntityMetamodel
 data class MysqlConfig(
     override val config: DbConfig,
     override val entities: List<EntityMetamodel<*, *, *>>,
-    override val forceRecreate: Boolean = false,
 
     val adminUser: String,
     val adminPassword: String
@@ -30,7 +29,7 @@ data class MysqlConfig(
  * MySQL 初始化：建库（可选强制重建）+ 按实体建表
  *
  */
-fun initMysql(config: MysqlConfig): Boolean {
+fun initMysql(config: MysqlConfig, forceRecreate: Boolean): Boolean {
     val host = config.config.dbName
     val port = config.config.port
     val database = config.config.dbName
@@ -40,7 +39,7 @@ fun initMysql(config: MysqlConfig): Boolean {
     val adminUser = config.adminUser
     val adminPassword = config.adminPassword
     val entities = config.entities
-    val forceRecreate = config.forceRecreate
+
 
     val adminUrl = "jdbc:mysql://$host:$port/?useSSL=false&serverTimezone=UTC&characterEncoding=utf8"
     val bizUrl = "jdbc:mysql://$host:$port/$database?useSSL=false&serverTimezone=UTC&characterEncoding=utf8"

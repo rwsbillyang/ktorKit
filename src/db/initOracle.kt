@@ -33,7 +33,6 @@ import org.komapper.core.dsl.metamodel.EntityMetamodel
 data class OracleConfig(
     override val config: DbConfig,
     override val entities: List<EntityMetamodel<*, *, *>>,
-    override val forceRecreate: Boolean = false,
 
     val serviceName: String,
     val sysUser: String = "SYS",
@@ -46,10 +45,10 @@ data class OracleConfig(
  *    forceRecreate = true 会 DROP USER CASCADE（删除用户及所有对象），数据全部丢失！
  *
  */
-fun initOracle(config: OracleConfig) {
+fun initOracle(config: OracleConfig, forceRecreate: Boolean) {
     val host = config.config.host
     val port = config.config.port
-    val database = config.config.dbName
+    //val database = config.config.dbName
     val appUser = config.config.userName?:""
     val appPassword = config.config.pwd?:""
 
@@ -58,7 +57,7 @@ fun initOracle(config: OracleConfig) {
     val sysUser = config.sysUser
 
     val entities = config.entities
-    val forceRecreate = config.forceRecreate
+
 
     val adminUrl = "jdbc:oracle:thin:@//$host:$port/$serviceName"
     val bizUrl = "jdbc:oracle:thin:@//$host:$port/$serviceName"
