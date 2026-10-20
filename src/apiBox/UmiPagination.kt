@@ -30,12 +30,12 @@ enum class SortKeyType{
 
 /**
  * pagination info, sort info, and filter key info
- * @param pageSize default 20
- * @param current starts from 1, not 0
+ * @param pageSize default 10
+ * @param current starts from 1, not 0  从1起步，若指定了大于0的值，则优先使用页码分页，而不采用lastId. 对于某些排序值不唯一的场景，不适合用lastId进行分页，应指定current为1
  * @param sKey sort key.  mongodb example: "sorter":{"updatedAt":"ascend"} , the sort key is "updatedAt"
  * @param sort 1 for asc，-1 for desc, same as MongoDB
  * @param sKeyType the type of sKey
- * @param lastId the last value of sort key in current page when load more
+ * @param lastId the last value of sort key in current page when load more  current为空时，将使用lastId，该值必须存在列表项中，否则导致取得最后一项的值为空
  * @param fKey filter key
  * @param filters  items which contains values of filters, "filter":{"someKey":["value1",123,"value3"]}
  *
