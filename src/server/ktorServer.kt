@@ -34,6 +34,7 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
+class NotSupportActionException(val action: String, val from: String,  cause: Throwable? = null): Exception("Not support action: ${action} in ${from}", cause)
 
 
 class AuthenticationException : RuntimeException()

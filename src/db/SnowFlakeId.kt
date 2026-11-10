@@ -58,7 +58,10 @@ object SnowflakeId {
 
 
     /** 开始时间截 (2015-01-01)  */
-    private val epoch = 1420041600000L
+    //private val epoch = 1420041600000L
+
+    //2026-11-11 00:00:00（北京时间）
+    private val epoch = 1794326400000L
 
     /** 机器id所占的位数  */
     private val workerIdBits = 5L
