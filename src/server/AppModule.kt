@@ -94,6 +94,7 @@ fun Application.installModule(app: AppModule)
 //@kotlin.jvm.JvmOverloads
 fun Application.lastInstall(
     autoInstallPlugins: Boolean,
+    isInstallExceptionPage: Boolean,
     logHeaders: List<String>? = null, //"X-Auth-uId","X-Auth-UserId", "X-Auth-ExternalUserId", "X-Auth-oId", "X-Auth-unId","X-Auth-CorpId","Authorization"
     cache: ICache = CaffeineCache(),
     jsonBuilderAction: (JsonBuilder.() -> Unit)? = null
@@ -121,6 +122,10 @@ fun Application.lastInstall(
 
     if(autoInstallPlugins)
         installOptionalKtorPlugins(logHeaders, jsonBuilderAction)
+
+    if(isInstallExceptionPage){
+        installExceptionPage()
+    }
 
     _MyRoutings.add {
         get("/ok") {

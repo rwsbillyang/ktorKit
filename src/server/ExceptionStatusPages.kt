@@ -22,7 +22,6 @@ package com.github.rwsbillyang.ktorKit.server
 import com.auth0.jwt.exceptions.AlgorithmMismatchException
 import com.auth0.jwt.exceptions.InvalidClaimException
 import com.auth0.jwt.exceptions.TokenExpiredException
-import com.github.rwsbillyang.ktorKit.ApiJson
 
 import com.github.rwsbillyang.ktorKit.apiBox.DataBox
 
@@ -57,10 +56,19 @@ class BizException(
     }
 }
 
-fun Routing.exceptionPage(application: Application)
+fun Application.installExceptionPage()
 {
-    application.install(StatusPages) {
+    val application = this
+    install(StatusPages) {
         val headers = listOf("X-Auth-UserId", "X-Auth-ExternalUserId", "X-Auth-uId", "X-Auth-oId", "X-Auth-unId","X-Auth-CorpId","Authorization")
+
+        exception<ParameterBindingException> { call, cause ->
+            val msg = cause.message ?: "invalid parameter, bindParameters fail"
+            application.environment.log.error(msg)
+            //call.respondBox(DataBox.ko<Unit>(msg))
+            call.respond(HttpStatusCode.BadRequest, msg)
+        }
+
         exception<AuthenticationException> { call, cause ->
             application.environment.log.error("AuthenticationException: cause=$cause, ${call.request.httpMethod.value} ${call.request.path()} ${call.authHeaders(headers)}")
             call.respond(HttpStatusCode.Unauthorized)
@@ -72,7 +80,7 @@ fun Routing.exceptionPage(application: Application)
 
         exception<TokenExpiredException> { call, cause ->
             application.environment.log.error("TokenExpiredException: cause=$cause, ${call.request.httpMethod.value} ${call.request.path()} ${call.authHeaders(headers)}")
-            call.respondBox(DataBox<Unit>(DataBox.CODE_TokenExpired,"登录过期，请点击右上角，退出登录后，重新进入"))
+            call.respondBox(DataBox<Unit>(DataBox.CODE_TokenExpired,"登录过期，退出登录后，重新进入"))
         }
         exception<InvalidClaimException> { call, cause ->
             application.environment.log.error("InvalidClaimException: cause=$cause, ${call.request.httpMethod.value} ${call.request.path()} ${call.authHeaders(headers)}")
@@ -86,6 +94,10 @@ fun Routing.exceptionPage(application: Application)
             application.environment.log.error("JWTVerificationException: cause=$cause, ${call.request.httpMethod.value} ${call.request.path()} ${call.authHeaders(headers)}")
             call.respondBox(DataBox.ko<Unit>("JWTVerificationException"))
         }
+        exception<NotSupportActionException> { call, cause->
+            application.environment.log.error("NotSupportActionException: cause=$cause, ${call.request.httpMethod.value} ${call.request.path()}")
+            call.respondBox(DataBox.ko<Unit>("${cause.from}: Not support ${cause.action}"))
+        }
         exception<BizException> { call, cause->
             application.environment.log.error("BizException: cause=$cause, ${call.request.httpMethod.value} ${call.request.path()} ${call.authHeaders(headers)}")
             call.respond(DataBox(cause.code, cause.msg, cause.type, null,cause.tId, cause.host))
@@ -94,15 +106,6 @@ fun Routing.exceptionPage(application: Application)
 }
 
 
-suspend inline fun <reified T> ApplicationCall.respondBox(box: DataBox<T>) =
-    respondText(ApiJson.serverSerializeJson().encodeToString(box), ContentType.Application.Json, HttpStatusCode.OK)
-suspend inline fun <reified T> ApplicationCall.respondBoxOK(data: T) =
-    respondText(ApiJson.serverSerializeJson().encodeToString(DataBox.ok(data)), ContentType.Application.Json, HttpStatusCode.OK)
 
-suspend inline fun ApplicationCall.respondBoxKO(msg: String) =
-    respondText(ApiJson.serverSerializeJson().encodeToString(DataBox.ko<Unit>(msg)), ContentType.Application.Json, HttpStatusCode.OK)
-
-suspend inline fun ApplicationCall.respondBoxJsonText(json: String) =
-    respondText(json, ContentType.Application.Json, HttpStatusCode.OK)
 
 
