@@ -28,6 +28,7 @@ import org.komapper.core.dsl.expression.SortExpression
 import org.komapper.core.dsl.expression.WhereDeclaration
 import org.komapper.core.dsl.metamodel.EntityMetamodel
 import org.komapper.core.dsl.operator.and
+import org.komapper.core.dsl.operator.count
 import org.komapper.core.dsl.operator.or
 import org.komapper.core.dsl.query.Query
 import org.komapper.core.dsl.query.Row
@@ -156,7 +157,21 @@ abstract class AbstractSqlService(cache: ICache) : CacheService(cache) {
             }
 
         }
+    }
 
+    fun <ENTITY : Any, ID : Any, META : EntityMetamodel<ENTITY, ID, META>> count(
+        meta: META,
+        w: WhereDeclaration? = null,
+        database: JdbcDatabase = db
+    ): Long {
+        // 1. 统计全表记录数 生成 SQL: select count(*) from meta as t0_
+        // 2. 带条件的记录数统计 生成 SQL: select count(*) from meta as t0_ where w
+        val query = QueryDsl.from(meta)
+            .apply { if (w != null) where(w) }
+            .select(count())
+
+        // count() 在 JDBC 驱动下返回 Long?，但实际不可能为 null，加上 ?: 0L 可直接返回非空 Long
+        return database.runQuery(query) ?: 0L
     }
 
     /**
